@@ -114,6 +114,10 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
 .empty-ico{font-size:42px;margin-bottom:8px}
 .empty h3{font-family:'Syne',sans-serif;font-size:16px;color:var(--pu);margin-bottom:4px}
 .empty p{color:var(--mu);font-size:13px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1E1428;color:#fff;padding:11px 22px;border-radius:30px;font-size:13px;font-weight:500;z-index:500;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:#15803d}
+.toast.err{background:#b91c1c}
 @media(max-width:540px){.mgrid{grid-template-columns:1fr}.mgrid .s2{grid-column:span 1}}
 </style>
 </head>
@@ -238,6 +242,8 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
   </div>
 </div>
 
+<div id="toast" class="toast"></div>
+
 <!-- VIEWER -->
 <div class="viewer" id="viewer" onclick="closeViewer()">
   <button class="vx">✕</button>
@@ -260,8 +266,10 @@ var PRODS = [
 ];
 
 // ── ESTADO GLOBAL ─────────────────────────────────────────────────────────────
-var ENC = JSON.parse(localStorage.getItem('ac_enc') || '[]');
-var DEV = JSON.parse(localStorage.getItem('ac_dev') || '[]');
+var ENC = [];
+var DEV = [];
+var API = 'https://script.google.com/macros/s/AKfycbzYmC0seISMxkra2fdLbquZnHxsaZAsuJGOW_xyibk5ewUA63YljPDTJV4uufOKTT4B8g/exec';
+var syncing = false;
 var fE = 'todos', fD = 'todos';
 var iCount = 0;
 var mPhotos = [];          // fotos modal creación
@@ -280,9 +288,26 @@ var HNT_D = [
   '📎 Foto del comprobante de recogida o cambio del producto'
 ];
 
-function saveAll() {
-  localStorage.setItem('ac_enc', JSON.stringify(ENC));
-  localStorage.setItem('ac_dev', JSON.stringify(DEV));
+// ── API ───────────────────────────────────────────────────────────────────────
+function apiPost(body, cb) {
+  fetch(API, {method:'POST', body:JSON.stringify(body)})
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if(cb) cb(d); })
+    .catch(function(e){ console.error('API error',e); if(cb) cb({error:e.toString()}); });
+}
+function showLoading(msg) {
+  var t=el('toast'); if(!t) return;
+  t.textContent=msg||'Guardando...'; t.className='toast show';
+}
+function hideLoading(msg) {
+  var t=el('toast'); if(!t) return;
+  t.textContent=msg||'✓ Guardado'; t.className='toast show ok';
+  setTimeout(function(){ t.className='toast'; },2000);
+}
+function showErr(msg) {
+  var t=el('toast'); if(!t) return;
+  t.textContent='⚠️ '+(msg||'Error'); t.className='toast show err';
+  setTimeout(function(){ t.className='toast'; },3000);
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
@@ -495,10 +520,14 @@ function crearEncargo() {
     status:'Ordenado', created:now, updated:now,
     history:[{status:'Ordenado',nota:'Encargo creado',fotos:mPhotos.slice(),fecha:now}]
   };
-  ENC.unshift(enc);
-  try{ saveAll(); }catch(e){ alert('Error al guardar. Foto muy grande.'); ENC.shift(); return; }
-  closeModal('menc');
-  renderEnc();
+  showLoading('Guardando encargo...');
+  apiPost({action:'saveEnc', record:enc}, function(res){
+    if(res.error){ showErr(res.error); return; }
+    ENC.unshift(enc);
+    hideLoading('✓ Encargo creado');
+    closeModal('menc');
+    renderEnc();
+  });
 }
 
 // ── CREAR DEVOLUCION ──────────────────────────────────────────────────────────
@@ -507,16 +536,22 @@ function crearDevolucion() {
   var mot=val('dv-m'), desc=val('dv-desc');
   if(!prod||!nom||!tel||!mot||!desc){ alert('Completa todos los campos obligatorios'); return; }
   var now=new Date().toISOString();
-  DEV.unshift({
+  var rec={
     id:Date.now(), producto:prod, motivo:mot, descripcion:desc,
     factura:val('dv-f'), valor:val('dv-v'),
     cliente:nom, cedula:val('dv-ced'), telefono:tel, cajera:val('dv-caj'),
     status:'Recibido', created:now, updated:now, history:[]
+  };
+  showLoading('Guardando devolución...');
+  apiPost({action:'saveDev', record:rec}, function(res){
+    if(res.error){ showErr(res.error); return; }
+    DEV.unshift(rec);
+    hideLoading('✓ Devolución creada');
+    closeModal('mdev');
+    ['dv-p','dv-f','dv-desc','dv-nom','dv-ced','dv-tel','dv-caj'].forEach(function(id){ if(el(id)) el(id).value=''; });
+    if(el('dv-m')) el('dv-m').value=''; if(el('dv-v')) el('dv-v').value='';
+    renderDev();
   });
-  saveAll(); closeModal('mdev');
-  ['dv-p','dv-f','dv-desc','dv-nom','dv-ced','dv-tel','dv-caj'].forEach(function(id){ if(el(id)) el(id).value=''; });
-  if(el('dv-m')) el('dv-m').value=''; if(el('dv-v')) el('dv-v').value='';
-  renderDev();
 }
 
 // ── AVANZAR ESTADO ────────────────────────────────────────────────────────────
@@ -534,9 +569,13 @@ function advE(eid) {
   enc.status=EST_E[ci+1];
   enc.updated=new Date().toISOString();
   delete pend[k];
-  try{ saveAll(); }catch(e){ alert('Error al guardar. Foto muy grande.'); return; }
-  replaceCard('e',eid);
-  updateStats('e');
+  showLoading('Actualizando estado...');
+  apiPost({action:'updateEnc', record:enc}, function(res){
+    if(res.error){ showErr(res.error); return; }
+    hideLoading('✓ Estado actualizado');
+    replaceCard('e',eid);
+    updateStats('e');
+  });
 }
 function advD(did) {
   var dev=null;
@@ -552,27 +591,39 @@ function advD(did) {
   dev.status=EST_D[ci+1];
   dev.updated=new Date().toISOString();
   delete pend[k];
-  try{ saveAll(); }catch(e){ alert('Error al guardar. Foto muy grande.'); return; }
-  replaceCard('d',did);
-  updateStats('d');
+  showLoading('Actualizando estado...');
+  apiPost({action:'updateDev', record:dev}, function(res){
+    if(res.error){ showErr(res.error); return; }
+    hideLoading('✓ Estado actualizado');
+    replaceCard('d',did);
+    updateStats('d');
+  });
 }
 
 // ── ELIMINAR ──────────────────────────────────────────────────────────────────
 function delE(eid) {
   if(!confirm('¿Eliminar este encargo?')) return;
-  ENC=ENC.filter(function(e){ return e.id!==eid; });
-  saveAll();
-  var c=el('c'+eid); if(c) c.remove();
-  updateStats('e');
-  if(!el('le').children.length) renderEnc();
+  showLoading('Eliminando...');
+  apiPost({action:'deleteEnc', id:eid}, function(res){
+    if(res.error){ showErr(res.error); return; }
+    ENC=ENC.filter(function(e){ return e.id!==eid; });
+    hideLoading('✓ Eliminado');
+    var c=el('c'+eid); if(c) c.remove();
+    updateStats('e');
+    if(!el('le').children.length) renderEnc();
+  });
 }
 function delD(did) {
   if(!confirm('¿Eliminar esta devolución?')) return;
-  DEV=DEV.filter(function(d){ return d.id!==did; });
-  saveAll();
-  var c=el('c'+did); if(c) c.remove();
-  updateStats('d');
-  if(!el('ld').children.length) renderDev();
+  showLoading('Eliminando...');
+  apiPost({action:'deleteDev', id:did}, function(res){
+    if(res.error){ showErr(res.error); return; }
+    DEV=DEV.filter(function(d){ return d.id!==did; });
+    hideLoading('✓ Eliminado');
+    var c=el('c'+did); if(c) c.remove();
+    updateStats('d');
+    if(!el('ld').children.length) renderDev();
+  });
 }
 
 // ── HISTORIAL ─────────────────────────────────────────────────────────────────
@@ -762,9 +813,33 @@ document.addEventListener('click', function(ev) {
   }
 });
 
+// ── CARGAR DATOS DESDE SHEETS ─────────────────────────────────────────────────
+function loadData() {
+  showLoading('Cargando datos...');
+  // Load encargos
+  fetch(API + '?action=getEnc')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      ENC = Array.isArray(data) ? data : [];
+      // Load devoluciones
+      return fetch(API + '?action=getDev');
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      DEV = Array.isArray(data) ? data : [];
+      hideLoading('✓ Datos cargados');
+      renderEnc();
+      renderDev();
+    })
+    .catch(function(e){
+      showErr('Error al cargar datos');
+      renderEnc();
+      renderDev();
+    });
+}
+
 // Init
-renderEnc();
-renderDev();
+loadData();
 </script>
 </body>
 </html>
