@@ -406,15 +406,35 @@ function getItems() {
   return items;
 }
 
+// ── COMPRESIÓN DE IMÁGENES ───────────────────────────────────────────────────
+function compressImg(file, cb) {
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var MAX = 1200;
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 // ── FOTOS MODAL ───────────────────────────────────────────────────────────────
 function mPhotoAdd(inp) {
   Array.from(inp.files).forEach(function(file){
-    var r=new FileReader();
-    r.onload=function(ev){
-      mPhotos.push({data:ev.target.result,name:file.name,date:new Date().toISOString()});
+    compressImg(file, function(data){
+      mPhotos.push({data:data, name:file.name, date:new Date().toISOString()});
       renderMPrev();
-    };
-    r.readAsDataURL(file);
+    });
   });
 }
 function renderMPrev() {
@@ -431,17 +451,14 @@ function setPend(k, arr) { pend[k]=arr; }
 
 function cPhotoAdd(inp, k, prevId) {
   Array.from(inp.files).forEach(function(file){
-    var r=new FileReader();
-    r.onload=function(ev){
+    compressImg(file, function(data){
       var arr=getPend(k);
-      arr.push({data:ev.target.result,name:file.name,date:new Date().toISOString()});
-      setPend(k,arr);
+      arr.push({data:data, name:file.name, date:new Date().toISOString()});
+      setPend(k, arr);
       renderCPrev(k, prevId);
-      // Enable button
       var btn=el('ab'+k);
       if(btn){ btn.disabled=false; }
-    };
-    r.readAsDataURL(file);
+    });
   });
 }
 function renderCPrev(k, prevId) {
