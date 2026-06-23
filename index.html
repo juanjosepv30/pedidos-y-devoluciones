@@ -52,6 +52,7 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
 .hlist{display:none}.hlist.open{display:block}
 .hitem{background:var(--s2);border-radius:7px;padding:9px 11px;margin-bottom:5px;font-size:12px}
 .hst{font-weight:700;color:var(--pu);font-size:12px}.hnota{color:var(--mu);margin-top:2px}
+.hresp{color:var(--tx);font-size:12px;font-weight:600;margin-top:2px}
 .hdate{color:var(--mu);font-size:11px;margin-top:2px}.hphotos{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
 .npanel{border-top:1.5px dashed var(--bd);padding:13px 14px;background:var(--s2)}
 .nlabel{font-family:'Syne',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--pu);margin-bottom:8px}
@@ -75,6 +76,7 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
 .cfoot{border-top:1px solid var(--bd);padding:8px 14px;display:flex;justify-content:space-between;align-items:center}
 .cdate{font-size:11px;color:var(--mu)}
 .ibtn{background:var(--s2);border:none;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.cacts{display:flex;gap:6px}
 .ibtn:hover{background:var(--bd)}
 .overlay{display:none;position:fixed;inset:0;background:rgba(20,10,40,.6);z-index:200;align-items:flex-start;justify-content:center;padding:18px;overflow-y:auto}
 .overlay.open{display:flex}
@@ -138,11 +140,11 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
     <div class="stats" id="se"></div>
     <input class="srch" id="qe" placeholder="Buscar producto, cliente, cédula..." oninput="renderEnc()">
     <div class="filters">
-      <button class="fb on" onclick="setFlt('e','todos',this)">Todos</button>
       <button class="fb" onclick="setFlt('e','Ordenado',this)">Ordenado</button>
       <button class="fb" onclick="setFlt('e','Pedido',this)">Pedido</button>
       <button class="fb" onclick="setFlt('e','Llegó',this)">Llegó</button>
       <button class="fb" onclick="setFlt('e','Entregado',this)">Entregado</button>
+      <button class="fb on" onclick="setFlt('e','todos',this)">Todos</button>
     </div>
     <div class="grid" id="le"></div>
   </div>
@@ -154,10 +156,10 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
     <div class="stats" id="sd"></div>
     <input class="srch" id="qd" placeholder="Buscar producto, cliente, motivo..." oninput="renderDev()">
     <div class="filters">
-      <button class="fb on" onclick="setFlt('d','todos',this)">Todos</button>
       <button class="fb" onclick="setFlt('d','Recibido',this)">Recibido</button>
       <button class="fb" onclick="setFlt('d','En proceso',this)">En proceso</button>
       <button class="fb" onclick="setFlt('d','Solucionado',this)">Solucionado</button>
+      <button class="fb on" onclick="setFlt('d','todos',this)">Todos</button>
     </div>
     <div class="grid" id="ld"></div>
   </div>
@@ -166,7 +168,7 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
 <!-- MODAL ENCARGO -->
 <div class="overlay" id="menc">
   <div class="modal">
-    <div class="mhead"><div class="mtitle">Nuevo encargo</div><button class="mclose" onclick="closeModal('menc')">✕</button></div>
+    <div class="mhead"><div class="mtitle" id="menc-title">Nuevo encargo</div><button class="mclose" onclick="closeModal('menc')">✕</button></div>
     <div class="mbody">
       <div class="msec"><div class="mstitle">Productos</div>
         <div id="ic"></div>
@@ -186,16 +188,21 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
           <div class="fg"><label>Valor abono *</label><input id="ec-abo" type="tel" inputmode="numeric" placeholder="0"></div>
           <div class="fg"><label>Cajera *</label><input id="ec-caj" placeholder="Tu nombre"></div>
         </div>
-        <div style="font-size:12px;color:var(--mu);background:var(--ml);padding:8px 10px;border-radius:7px;margin:8px 0;border-left:3px solid var(--ms)">📎 Sube el comprobante de abono. <b>Requerido.</b></div>
-        <div class="upa" onclick="document.getElementById('ec-fot').click()">
-          <input type="file" id="ec-fot" accept="image/*" multiple style="display:none" onchange="mPhotoAdd(this)">
-          <div class="upatxt">Toca para subir · <b>Seleccionar imagen</b></div>
+        <div id="ec-compr">
+          <div style="font-size:12px;color:var(--mu);background:var(--ml);padding:8px 10px;border-radius:7px;margin:8px 0;border-left:3px solid var(--ms)">📎 Sube el comprobante de abono. <b>Requerido.</b></div>
+          <div class="upa" onclick="document.getElementById('ec-fot').click()">
+            <input type="file" id="ec-fot" accept="image/*" multiple style="display:none" onchange="mPhotoAdd(this)">
+            <div class="upatxt">Toca para subir · <b>Seleccionar imagen</b></div>
+          </div>
+          <div class="prevs" id="ec-prev"></div>
         </div>
-        <div class="prevs" id="ec-prev"></div>
+      </div>
+      <div class="msec" id="ec-cassec" style="display:none"><div class="mstitle">Ubicación</div>
+        <div class="fg"><label>Número de casillero</label><input id="ec-cas" placeholder="Casillero donde se ubica"></div>
       </div>
       <div class="mfoot">
         <button class="btn btnG" onclick="closeModal('menc')">Cancelar</button>
-        <button class="btn btnP" onclick="crearEncargo()">💾 Crear encargo</button>
+        <button class="btn btnP" id="menc-save" onclick="submitEnc()">💾 Crear encargo</button>
       </div>
     </div>
   </div>
@@ -204,7 +211,7 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
 <!-- MODAL DEVOLUCION -->
 <div class="overlay" id="mdev">
   <div class="modal">
-    <div class="mhead"><div class="mtitle">Nueva devolución</div><button class="mclose" onclick="closeModal('mdev')">✕</button></div>
+    <div class="mhead"><div class="mtitle" id="mdev-title">Nueva devolución</div><button class="mclose" onclick="closeModal('mdev')">✕</button></div>
     <div class="mbody">
       <div class="msec"><div class="mstitle">Producto devuelto</div>
         <div class="mgrid">
@@ -236,7 +243,7 @@ main{max-width:1040px;margin:0 auto;padding:20px 14px}
       </div>
       <div class="mfoot">
         <button class="btn btnG" onclick="closeModal('mdev')">Cancelar</button>
-        <button class="btn btnP" onclick="crearDevolucion()">💾 Crear devolución</button>
+        <button class="btn btnP" id="mdev-save" onclick="submitDev()">💾 Crear devolución</button>
       </div>
     </div>
   </div>
@@ -5396,6 +5403,7 @@ var API = 'https://script.google.com/macros/s/AKfycbzYmC0seISMxkra2fdLbquZnHxsaZ
 var syncing = false;
 var fE = 'todos', fD = 'todos';
 var iCount = 0;
+var editEncId = null, editDevId = null;   // null = modo creación; id = modo edición
 var mPhotos = [];          // fotos modal creación
 var pend = {};             // fotos pendientes por tarjeta, clave = 'e'+id o 'd'+id
 
@@ -5514,34 +5522,93 @@ function getIN(bid) { return el('is'+bid) ? el('is'+bid).value.trim() : ''; }
 
 // ── ITEMS MODAL ───────────────────────────────────────────────────────────────
 function openEncModal() {
+  editEncId=null;
   iCount=0; mPhotos=[];
   el('ic').innerHTML='';
-  ['ec-nom','ec-ced','ec-tel','ec-tel2','ec-dir','ec-abo','ec-caj'].forEach(function(id){ if(el(id)) el(id).value=''; });
+  ['ec-nom','ec-ced','ec-tel','ec-tel2','ec-dir','ec-abo','ec-caj','ec-cas'].forEach(function(id){ if(el(id)) el(id).value=''; });
   el('ec-prev').innerHTML='';
+  el('menc-title').textContent='Nuevo encargo';
+  el('menc-save').textContent='💾 Crear encargo';
+  el('ec-compr').style.display='';        // comprobante requerido al crear
+  el('ec-cassec').style.display='none';   // casillero solo en edición
   addItem();
   openModal('menc');
 }
-function openDevModal() { openModal('mdev'); }
-function addItem() {
+function openEditEnc(eid) {
+  var enc=null;
+  for(var i=0;i<ENC.length;i++){ if(ENC[i].id===eid){ enc=ENC[i]; break; } }
+  if(!enc) return;
+  editEncId=eid;
+  iCount=0; mPhotos=[];
+  el('ic').innerHTML='';
+  el('ec-nom').value=enc.cliente||'';
+  el('ec-ced').value=enc.cedula||'';
+  el('ec-tel').value=enc.telefono||'';
+  el('ec-tel2').value=enc.telefono2||'';
+  el('ec-dir').value=enc.direccion||'';
+  el('ec-abo').value=enc.abono||'';
+  el('ec-caj').value=enc.cajera||'';
+  el('ec-cas').value=enc.casillero||'';
+  el('ec-prev').innerHTML='';
+  el('menc-title').textContent='Editar encargo';
+  el('menc-save').textContent='💾 Guardar cambios';
+  el('ec-compr').style.display='none';    // no se re-sube comprobante al editar
+  el('ec-cassec').style.display='';       // casillero editable
+  var its=enc.items&&enc.items.length?enc.items:[{nombre:'',qty:1,obs:''}];
+  its.forEach(function(it){ addItem(it); });
+  openModal('menc');
+}
+function openDevModal() {
+  editDevId=null;
+  ['dv-p','dv-f','dv-desc','dv-nom','dv-ced','dv-tel','dv-caj','dv-v'].forEach(function(id){ if(el(id)) el(id).value=''; });
+  if(el('dv-m')) el('dv-m').value='';
+  el('mdev-title').textContent='Nueva devolución';
+  el('mdev-save').textContent='💾 Crear devolución';
+  openModal('mdev');
+}
+function openEditDev(did) {
+  var dev=null;
+  for(var i=0;i<DEV.length;i++){ if(DEV[i].id===did){ dev=DEV[i]; break; } }
+  if(!dev) return;
+  editDevId=did;
+  el('dv-p').value=dev.producto||''; el('dv-p').dataset.manual='1';
+  if(el('dv-m')) el('dv-m').value=dev.motivo||'';
+  el('dv-f').value=dev.factura||'';
+  el('dv-desc').value=dev.descripcion||'';
+  el('dv-v').value=dev.valor||'';
+  el('dv-nom').value=dev.cliente||'';
+  el('dv-ced').value=dev.cedula||'';
+  el('dv-tel').value=dev.telefono||'';
+  el('dv-caj').value=dev.cajera||'';
+  el('mdev-title').textContent='Editar devolución';
+  el('mdev-save').textContent='💾 Guardar cambios';
+  openModal('mdev');
+}
+function addItem(data) {
   iCount++;
   var id = iCount;
+  data = data || {};
+  var nm=(data.nombre||'').replace(/"/g,'&quot;');
+  var ob=(data.obs||'').replace(/"/g,'&quot;');
+  var qt=parseInt(data.qty)||1;
   var d = document.createElement('div');
   d.className='iblock'; d.id='ib'+id;
-  d.innerHTML='<div class="ibnum">Referencia '+id+'</div>'
-    +(id>1?'<button class="ibrem" onclick="remItem('+id+')">✕</button>':'')
+  d.innerHTML='<div class="ibnum">Referencia</div>'
+    +'<button class="ibrem" onclick="remItem('+id+')">✕</button>'
     +'<div class="fg"><label>Producto *</label>'
-    +'<div class="psw"><input id="is'+id+'" placeholder="Buscar por nombre o código..." oninput="sitem('+id+')" onfocus="fiitem('+id+')" autocomplete="off">'
+    +'<div class="psw"><input id="is'+id+'" value="'+nm+'" placeholder="Buscar por nombre o código..." oninput="sitem('+id+')" onfocus="fiitem('+id+')" autocomplete="off">'
     +'<div class="pdrop" id="id'+id+'"></div></div></div>'
     +'<div class="qrow">'
     +'<div class="fg"><label>Cantidad</label>'
     +'<div class="qwrap">'
     +'<button class="qbtn" onclick="chQ('+id+',-1)">−</button>'
-    +'<input type="number" id="iq'+id+'" value="1" min="1">'
+    +'<input type="number" id="iq'+id+'" value="'+qt+'" min="1">'
     +'<button class="qbtn" onclick="chQ('+id+',1)">+</button>'
     +'</div></div>'
-    +'<div class="fg"><label>Observaciones</label><input id="io'+id+'" placeholder="Detalles..."></div>'
+    +'<div class="fg"><label>Observaciones</label><input id="io'+id+'" value="'+ob+'" placeholder="Detalles..."></div>'
     +'</div>';
   el('ic').appendChild(d);
+  if(nm){ var inp=el('is'+id); if(inp) inp.dataset.manual='1'; }
 }
 function remItem(id) { var e=el('ib'+id); if(e) e.remove(); }
 function chQ(id, d) { var i=el('iq'+id); if(i) i.value=Math.max(1,(parseInt(i.value)||1)+d); }
@@ -5628,7 +5695,33 @@ function delCPhoto(k, prevId, i) {
 function viewImg(src) { el('vimg').src=src; el('viewer').classList.add('open'); }
 function closeViewer() { el('viewer').classList.remove('open'); }
 
-// ── CREAR ENCARGO ─────────────────────────────────────────────────────────────
+// ── CREAR / EDITAR ENCARGO ────────────────────────────────────────────────────
+function submitEnc() { if(editEncId) saveEditEnc(); else crearEncargo(); }
+
+function saveEditEnc() {
+  var enc=null;
+  for(var i=0;i<ENC.length;i++){ if(ENC[i].id===editEncId){ enc=ENC[i]; break; } }
+  if(!enc){ showErr('Encargo no encontrado'); return; }
+  var items=getItems();
+  if(!items.length||!items[0].nombre){ alert('Agrega al menos un producto'); return; }
+  var nom=val('ec-nom'), tel=val('ec-tel'), caj=val('ec-caj');
+  if(!nom||!tel||!caj){ alert('Completa nombre, teléfono y cajera'); return; }
+  enc.items=items;
+  enc.cliente=nom; enc.cedula=val('ec-ced'); enc.telefono=tel;
+  enc.telefono2=val('ec-tel2'); enc.direccion=val('ec-dir');
+  enc.abono=val('ec-abo'); enc.cajera=caj; enc.casillero=val('ec-cas');
+  enc.updated=new Date().toISOString();
+  showLoading('Guardando cambios...');
+  apiPost({action:'updateEnc', record:enc}, function(res){
+    if(res.error){ showErr(res.error); return; }
+    hideLoading('✓ Cambios guardados');
+    closeModal('menc');
+    editEncId=null;
+    replaceCard('e',enc.id);
+    updateStats('e');
+  });
+}
+
 function crearEncargo() {
   var items=getItems();
   if(!items.length||!items[0].nombre){ alert('Agrega al menos un producto'); return; }
@@ -5654,7 +5747,31 @@ function crearEncargo() {
   });
 }
 
-// ── CREAR DEVOLUCION ──────────────────────────────────────────────────────────
+// ── CREAR / EDITAR DEVOLUCION ─────────────────────────────────────────────────
+function submitDev() { if(editDevId) saveEditDev(); else crearDevolucion(); }
+
+function saveEditDev() {
+  var dev=null;
+  for(var i=0;i<DEV.length;i++){ if(DEV[i].id===editDevId){ dev=DEV[i]; break; } }
+  if(!dev){ showErr('Devolución no encontrada'); return; }
+  var prod=val('dv-p'), nom=val('dv-nom'), tel=val('dv-tel');
+  var mot=val('dv-m'), desc=val('dv-desc');
+  if(!prod||!nom||!tel||!mot||!desc){ alert('Completa todos los campos obligatorios'); return; }
+  dev.producto=prod; dev.motivo=mot; dev.descripcion=desc;
+  dev.factura=val('dv-f'); dev.valor=val('dv-v');
+  dev.cliente=nom; dev.cedula=val('dv-ced'); dev.telefono=tel; dev.cajera=val('dv-caj');
+  dev.updated=new Date().toISOString();
+  showLoading('Guardando cambios...');
+  apiPost({action:'updateDev', record:dev}, function(res){
+    if(res.error){ showErr(res.error); return; }
+    hideLoading('✓ Cambios guardados');
+    closeModal('mdev');
+    editDevId=null;
+    replaceCard('d',dev.id);
+    updateStats('d');
+  });
+}
+
 function crearDevolucion() {
   var prod=val('dv-p'), nom=val('dv-nom'), tel=val('dv-tel');
   var mot=val('dv-m'), desc=val('dv-desc');
@@ -5685,12 +5802,20 @@ function advE(eid) {
   if(!enc) return;
   var ci=EST_E.indexOf(enc.status);
   if(ci>=EST_E.length-1) return;
+  var ns=EST_E[ci+1];
   var k='e'+eid;
   var photos=getPend(k);
   if(!photos.length){ alert('⚠️ Sube el comprobante antes de continuar'); return; }
+  var resp=val('eresp'+eid);
+  if(!resp){ alert('⚠️ Escribe quién pasa la tarjeta a la siguiente etapa'); return; }
+  if(ns==='Llegó'){
+    var cas=val('ecas'+eid);
+    if(!cas){ alert('⚠️ Escribe el número de casillero donde se ubica el producto'); return; }
+    enc.casillero=cas;
+  }
   var nota=val('en'+eid);
-  enc.history.push({status:enc.status,nota:nota,fotos:photos,fecha:new Date().toISOString()});
-  enc.status=EST_E[ci+1];
+  enc.history.push({status:enc.status,nota:nota,responsable:resp,fotos:photos,fecha:new Date().toISOString()});
+  enc.status=ns;
   enc.updated=new Date().toISOString();
   delete pend[k];
   showLoading('Actualizando estado...');
@@ -5710,8 +5835,10 @@ function advD(did) {
   var k='d'+did;
   var photos=getPend(k);
   if(!photos.length){ alert('⚠️ Sube la foto antes de continuar'); return; }
+  var resp=val('dresp'+did);
+  if(!resp){ alert('⚠️ Escribe quién pasa la tarjeta a la siguiente etapa'); return; }
   var nota=val('dn'+did);
-  dev.history.push({status:dev.status,nota:nota,fotos:photos,fecha:new Date().toISOString()});
+  dev.history.push({status:dev.status,nota:nota,responsable:resp,fotos:photos,fecha:new Date().toISOString()});
   dev.status=EST_D[ci+1];
   dev.updated=new Date().toISOString();
   delete pend[k];
@@ -5791,6 +5918,7 @@ function buildE(e) {
       +'<div class="hlist" id="hl'+id+'">'
       +e.history.slice().reverse().map(function(h){
         return '<div class="hitem"><div class="hst">'+h.status+'</div>'
+          +(h.responsable?'<div class="hresp">👤 '+h.responsable+'</div>':'')
           +(h.nota?'<div class="hnota">'+h.nota+'</div>':'')
           +'<div class="hdate">'+fd(h.fecha)+'</div>'
           +(h.fotos&&h.fotos.length?'<div class="hphotos">'+h.fotos.map(function(f){ return '<img class="thumb" src="'+f.data+'" onclick="viewImg(\''+f.data+'\')">'; }).join('')+'</div>':'')
@@ -5802,9 +5930,14 @@ function buildE(e) {
   if(ci<EST_E.length-1){
     var ns=EST_E[ci+1], hint=HNT_E[ci], k='e'+id, pid='ep'+id, fid='ef'+id;
     var bcls=['abtn-pu','abtn-ms','abtn-gn'][ci]||'abtn-pu';
+    var casFld = ns==='Llegó'
+      ? '<div class="fg"><label>📍 Número de casillero *</label><input id="ecas'+id+'" placeholder="Casillero donde se ubica el producto"></div>'
+      : '';
     next='<div class="npanel">'
       +'<div class="nlabel">→ Para pasar a "'+ns+'"</div>'
       +'<div class="nhint">'+hint+'</div>'
+      +casFld
+      +'<div class="fg"><label>Quién pasa la tarjeta *</label><input id="eresp'+id+'" placeholder="Nombre de quien avanza la tarjeta"></div>'
       +'<div class="fg"><label>Nota (opcional)</label><textarea id="en'+id+'" placeholder="Nota sobre este avance..."></textarea></div>'
       +'<div class="fg"><label>📎 Comprobante requerido</label>'
       +'<div class="upa" onclick="document.getElementById(\''+fid+'\').click()">'
@@ -5828,10 +5961,12 @@ function buildE(e) {
     +(e.direccion?'<br><b>Dir:</b> '+e.direccion:'')
     +(e.abono?'<br><b>Abono:</b> $'+Number(e.abono).toLocaleString():'')
     +'<br><b>Cajera:</b> '+(e.cajera||'—')
+    +(e.casillero?'<br><b>📍 Casillero:</b> '+e.casillero:'')
     +'</div></div>'
     +hist+next
     +'<div class="cfoot"><div class="cdate">'+fd(e.updated)+(tf?' · 📎 '+tf:'')+'</div>'
-    +'<button class="ibtn" onclick="delE('+id+')" title="Eliminar">🗑️</button></div>'
+    +'<div class="cacts"><button class="ibtn" onclick="openEditEnc('+id+')" title="Editar">✏️</button>'
+    +'<button class="ibtn" onclick="delE('+id+')" title="Eliminar">🗑️</button></div></div>'
     +'</div>';
 }
 
@@ -5846,6 +5981,7 @@ function buildD(d) {
       +'<div class="hlist" id="hl'+id+'">'
       +d.history.slice().reverse().map(function(h){
         return '<div class="hitem"><div class="hst">'+h.status+'</div>'
+          +(h.responsable?'<div class="hresp">👤 '+h.responsable+'</div>':'')
           +(h.nota?'<div class="hnota">'+h.nota+'</div>':'')
           +'<div class="hdate">'+fd(h.fecha)+'</div>'
           +(h.fotos&&h.fotos.length?'<div class="hphotos">'+h.fotos.map(function(f){ return '<img class="thumb" src="'+f.data+'" onclick="viewImg(\''+f.data+'\')">'; }).join('')+'</div>':'')
@@ -5860,6 +5996,7 @@ function buildD(d) {
     next='<div class="npanel">'
       +'<div class="nlabel">→ Para pasar a "'+ns+'"</div>'
       +'<div class="nhint">'+hint+'</div>'
+      +'<div class="fg"><label>Quién pasa la tarjeta *</label><input id="dresp'+id+'" placeholder="Nombre de quien avanza la tarjeta"></div>'
       +'<div class="fg"><label>Nota (opcional)</label><textarea id="dn'+id+'" placeholder="Nota sobre este avance..."></textarea></div>'
       +'<div class="fg"><label>📎 Foto requerida</label>'
       +'<div class="upa" onclick="document.getElementById(\''+fid+'\').click()">'
@@ -5887,7 +6024,8 @@ function buildD(d) {
     +'</div></div>'
     +hist+next
     +'<div class="cfoot"><div class="cdate">'+fd(d.updated)+(tf?' · 📎 '+tf:'')+'</div>'
-    +'<button class="ibtn" onclick="delD('+id+')" title="Eliminar">🗑️</button></div>'
+    +'<div class="cacts"><button class="ibtn" onclick="openEditDev('+id+')" title="Editar">✏️</button>'
+    +'<button class="ibtn" onclick="delD('+id+')" title="Eliminar">🗑️</button></div></div>'
     +'</div>';
 }
 
