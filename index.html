@@ -5458,6 +5458,9 @@ function showErr(msg) {
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function el(id) { return document.getElementById(id); }
 function val(id) { var e=el(id); return e ? e.value.trim() : ''; }
+// Bloqueo anti-duplicados: deshabilita un botón mientras se guarda
+function lockBtn(id, txt) { var b=el(id); if(b){ if(b.disabled) return false; b.dataset.txt=b.textContent; b.disabled=true; b.textContent=txt||'Guardando...'; } return true; }
+function unlockBtn(id) { var b=el(id); if(b){ b.disabled=false; if(b.dataset.txt) b.textContent=b.dataset.txt; } }
 function bk(s) {
   return {Ordenado:'ord',Pedido:'ped','Llegó':'lle',Entregado:'ent',
           Recibido:'rec','En proceso':'pro',Solucionado:'sol'}[s]||'ord';
@@ -5665,6 +5668,7 @@ function crearEncargo() {
   var nom=val('ec-nom'), tel=val('ec-tel'), caj=val('ec-caj');
   if(!nom||!tel||!caj){ alert('Completa nombre, teléfono y cajera'); return; }
   if(!mPhotos.length){ alert('⚠️ Sube el comprobante de abono'); return; }
+  if(!lockBtn('menc-save','💾 Guardando...')) return;   // evita doble envío
   var now=new Date().toISOString();
   var enc={
     id:Date.now(), items:items,
@@ -5676,6 +5680,7 @@ function crearEncargo() {
   };
   showLoading('Guardando encargo...');
   apiPost({action:'saveEnc', record:enc}, function(res){
+    unlockBtn('menc-save');
     if(res.error){ showErr(res.error); return; }
     ENC.unshift(enc);
     hideLoading('✓ Encargo creado');
@@ -5689,6 +5694,7 @@ function crearDevolucion() {
   var prod=val('dv-p'), nom=val('dv-nom'), tel=val('dv-tel');
   var mot=val('dv-m'), desc=val('dv-desc');
   if(!prod||!nom||!tel||!mot||!desc){ alert('Completa todos los campos obligatorios'); return; }
+  if(!lockBtn('mdev-save','💾 Guardando...')) return;   // evita doble envío
   var now=new Date().toISOString();
   var rec={
     id:Date.now(), producto:prod, motivo:mot, descripcion:desc,
@@ -5698,6 +5704,7 @@ function crearDevolucion() {
   };
   showLoading('Guardando devolución...');
   apiPost({action:'saveDev', record:rec}, function(res){
+    unlockBtn('mdev-save');
     if(res.error){ showErr(res.error); return; }
     DEV.unshift(rec);
     hideLoading('✓ Devolución creada');
@@ -5726,6 +5733,7 @@ function advE(eid) {
     if(!cas){ alert('⚠️ Escribe el número de casillero donde se ubica el producto'); return; }
     enc.casillero=cas;
   }
+  if(!lockBtn('ab'+k,'Guardando...')) return;   // evita doble avance
   var nota=val('en'+eid);
   enc.history.push({status:enc.status,nota:nota,responsable:resp,fotos:photos,fecha:new Date().toISOString()});
   enc.status=ns;
@@ -5733,7 +5741,7 @@ function advE(eid) {
   delete pend[k];
   showLoading('Actualizando estado...');
   apiPost({action:'updateEnc', record:enc}, function(res){
-    if(res.error){ showErr(res.error); return; }
+    if(res.error){ unlockBtn('ab'+k); showErr(res.error); return; }
     hideLoading('✓ Estado actualizado');
     replaceCard('e',eid);
     updateStats('e');
@@ -5750,6 +5758,7 @@ function advD(did) {
   if(!photos.length){ alert('⚠️ Sube la foto antes de continuar'); return; }
   var resp=val('dresp'+did);
   if(!resp){ alert('⚠️ Escribe quién pasa la tarjeta a la siguiente etapa'); return; }
+  if(!lockBtn('ab'+k,'Guardando...')) return;   // evita doble avance
   var nota=val('dn'+did);
   dev.history.push({status:dev.status,nota:nota,responsable:resp,fotos:photos,fecha:new Date().toISOString()});
   dev.status=EST_D[ci+1];
@@ -5757,7 +5766,7 @@ function advD(did) {
   delete pend[k];
   showLoading('Actualizando estado...');
   apiPost({action:'updateDev', record:dev}, function(res){
-    if(res.error){ showErr(res.error); return; }
+    if(res.error){ unlockBtn('ab'+k); showErr(res.error); return; }
     hideLoading('✓ Estado actualizado');
     replaceCard('d',did);
     updateStats('d');
